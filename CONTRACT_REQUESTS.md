@@ -54,3 +54,6 @@ convenience only. C does not emit it until it is accepted.
    'player:shot': { origin: Vec3; direction: Vec3; result: ShotResult };
 +  'player:zoom': { level: 0 | 1 | 2 };
 ```
+
+### Lead decision (2026-10-11): C1 and C2 applied
+C1: `vite.config.ts` now ignores only `<root>/.claude/` and `<root>/source-map/` using a path-relative function, so HMR works inside worktrees. C2: `'player:zoom'` was added to `GameEvents`. Its emission gets wired at integration.

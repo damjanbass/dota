@@ -176,6 +176,7 @@ export interface ShotResult {
 /** Cross-module events. Add new events via CONTRACT_REQUESTS.md. */
 export interface GameEvents extends Record<string, unknown> {
   'player:shot': { origin: Vec3; direction: Vec3; result: ShotResult };
+  'player:zoom': { level: 0 | 1 | 2 };
   'player:ability': { abilityId: string; target?: Vec3; targetId?: number };
   'unit:damaged': { targetId: number; sourceId: number | null; amount: number; headshot: boolean };
   'unit:died': { unitId: number; killerId: number | null };
