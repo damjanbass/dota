@@ -12,13 +12,14 @@ import type { SceneRunner } from '../core/scene';
 import type { Vec3 } from '../core/types';
 import { createUnitModel, createWorld, UNIT_MODEL_IDS } from './index';
 import type { AnimName, AnimatedModel, World, WorldStats } from './index';
+import { setTerrainDebugLevel } from './terrain';
 import { SHOWCASE_GROUND, SHOWCASE_ROWS, createShowcaseMap } from './showcaseMap';
 import { MAP_VIEWS, computeView, eyeAt, roshanPitFacing } from './views';
 import type { MapViewName, ViewPreset } from './views';
 
 declare global {
   interface Window {
-    __worldStats?: WorldStats & { fps: number; view: string };
+    __worldStats?: WorldStats & { fps: number; view: string; frameMs: number; cpuMs: number };
   }
 }
 
@@ -128,10 +129,20 @@ export const run: SceneRunner = async ({ canvas, ui, map: loadedMap }) => {
   const scene = new Scene();
   const camera = new PerspectiveCamera(isShowcase && view === 'showcase_units' ? 50 : 75, window.innerWidth / window.innerHeight, 4, VIEW_DISTANCE);
 
+  setTerrainDebugLevel(Number(params.get('tdbg') ?? 0));
   const world = createWorld({ scene, renderer, map, timeOfDay });
 
+  // Debug: ?off=shadows,terrain,trees,doodads,buildings,water,sky,units to bisect frame cost.
+  const off = new Set((params.get('off') ?? '').split(',').filter(Boolean));
+  if (off.has('shadows')) renderer.shadowMap.enabled = false;
+  for (const name of ['terrain', 'trees', 'doodads', 'buildings', 'water', 'sky']) {
+    const o = world.root.getObjectByName(name);
+    if (o && off.has(name)) o.visible = false;
+  }
+  if (off.has('glow')) world.root.traverse((o) => o.name === 'glow' && (o.visible = false));
+
   const units: DemoUnit[] = [];
-  if (params.get('units') !== '0') {
+  if (params.get('units') !== '0' && !off.has('units')) {
     if (isShowcase) showcaseUnits(world, anim, units);
     else demoUnitsForView(map, world, view as MapViewName, anim, units);
   }
@@ -203,6 +214,9 @@ export const run: SceneRunner = async ({ canvas, ui, map: loadedMap }) => {
   let fpsAcc = 0;
   let fpsFrames = 0;
   let fps = 0;
+  // Rolling averages: frame interval and CPU time spent in update + render submission.
+  let frameMs = 0;
+  let cpuMs = 0;
   let last = performance.now();
 
   const frame = (now: number): void => {
@@ -222,9 +236,12 @@ export const run: SceneRunner = async ({ canvas, ui, map: loadedMap }) => {
       const speed = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 2600 : 650;
       camera.position.addScaledVector(move.normalize(), speed * dt);
     }
+    const c0 = performance.now();
     for (const u of units) u.model.update(dt);
     world.update(dt, camera.position);
     renderer.render(scene, camera);
+    cpuMs += (performance.now() - c0 - cpuMs) * 0.05;
+    frameMs += (dt * 1000 - frameMs) * 0.05;
 
     frames++;
     fpsAcc += dt;
@@ -237,11 +254,11 @@ export const run: SceneRunner = async ({ canvas, ui, map: loadedMap }) => {
     if (frames % 15 === 1) {
       const s = world.getStats();
       const p = fromThree(camera.position);
-      window.__worldStats = { ...s, fps, view };
+      window.__worldStats = { ...s, fps, view, frameMs, cpuMs };
       const hour = world.timeOfDay * 24;
       overlay.textContent =
         `world · ${map.data.source} · view ${view}\n` +
-        `fps ${fps.toFixed(0)}  calls ${s.drawCalls}  tris ${(s.triangles / 1000).toFixed(0)}k\n` +
+        `fps ${fps.toFixed(0)} (${frameMs.toFixed(1)} ms, cpu ${cpuMs.toFixed(1)} ms)  calls ${s.drawCalls}  tris ${(s.triangles / 1000).toFixed(0)}k\n` +
         `pos ${p.x.toFixed(0)}, ${p.y.toFixed(0)}, ${p.z.toFixed(0)} (eye ${(p.z - world.heightAt(p.x, p.y)).toFixed(0)})\n` +
         `time ${String(Math.floor(hour)).padStart(2, '0')}:${String(Math.floor((hour % 1) * 60)).padStart(2, '0')}  trees ${s.trees}  buildings ${s.buildings}\n` +
         `WASD fly · drag look · Shift fast · Space/C up/down · G eye height (${EYE_HEIGHT}) · T time · U anim`;

@@ -102,12 +102,18 @@ const SPLAT_FRAGMENT = /* glsl */ `
   vec2 gdx = dFdx(uv);
   vec2 gdy = dFdy(uv);
   vec3 col;
+#if TDBG == 3
+  col = vec3(0.3, 0.5, 0.2);
+#elif TDBG == 1
+  col = layerTex(L.x, uv, gdx, gdy);
+#else
   if (L.x == L.y && L.x == L.z && L.x == L.w) {
     col = layerTex(L.x, uv, gdx, gdy);
   } else {
     col = layerTex(L.x, uv, gdx, gdy) * w.x + layerTex(L.y, uv, gdx, gdy) * w.y
         + layerTex(L.z, uv, gdx, gdy) * w.z + layerTex(L.w, uv, gdx, gdy) * w.w;
   }
+#endif
 
   // Blight overlay with a darker creeping edge.
   vec4 B = vec4(d00.g, d10.g, d01.g, d11.g);
@@ -126,14 +132,20 @@ const SPLAT_FRAGMENT = /* glsl */ `
   float slope = 1.0 - wn.y;
   float rockW = smoothstep(0.3, 0.52, slope + (nz.g - 0.5) * 0.22);
   rockW = max(rockW, vWall * 0.85);
-  if (rockW > 0.001) {
+  // Derivatives must be taken in uniform control flow (undefined inside the branch → huge
+  // gradients → pathological anisotropic sampling on some GPUs).
+  vec2 uvA = vec2(vWPos.x, -vWPos.y) / 320.0;
+  vec2 uvB = vec2(vWPos.z, -vWPos.y) / 320.0;
+  vec2 gAx = dFdx(uvA);
+  vec2 gAy = dFdy(uvA);
+  vec2 gBx = dFdx(uvB);
+  vec2 gBy = dFdy(uvB);
+  if (TDBG == 0 && rockW > 0.001) {
     float darkCliff = max(max(d00.b, d10.b), max(d01.b, d11.b));
     float rl = (darkCliff > 0.5 || bmask > 0.5) ? uCliffDarkLayer : uCliffLayer;
-    vec2 uvA = vec2(vWPos.x, -vWPos.y) / 320.0;
-    vec2 uvB = vec2(vWPos.z, -vWPos.y) / 320.0;
     float bw = abs(wn.x) / (abs(wn.x) + abs(wn.z) + 1e-4);
-    vec3 ra = textureGrad(uLayers, vec3(uvA, rl), dFdx(uvA), dFdy(uvA)).rgb;
-    vec3 rb = textureGrad(uLayers, vec3(uvB, rl), dFdx(uvB), dFdy(uvB)).rgb;
+    vec3 ra = textureGrad(uLayers, vec3(uvA, rl), gAx, gAy).rgb;
+    vec3 rb = textureGrad(uLayers, vec3(uvB, rl), gBx, gBy).rgb;
     col = mix(col, mix(ra, rb, bw), rockW);
   }
 
@@ -150,6 +162,12 @@ const SPLAT_FRAGMENT = /* glsl */ `
   col *= vAO;
   diffuseColor.rgb = col;
 `;
+
+let debugLevel = 0;
+/** Dev-only: simplify the splat shader (1 = single sample, 2 = no rock, 3 = flat colour) to bisect cost. */
+export const setTerrainDebugLevel = (level: number): void => {
+  debugLevel = level;
+};
 
 export const createTerrain = (map: LoadedMap, textures?: GroundTextures): Terrain => {
   const t = map.data.terrain;
@@ -195,10 +213,10 @@ export const createTerrain = (map: LoadedMap, textures?: GroundTextures): Terrai
       .replace('#include <common>', `#include <common>\n${SPLAT_VERTEX_PARS}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>\n${SPLAT_VERTEX}`);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${SPLAT_FRAGMENT_PARS}`)
+      .replace('#include <common>', `#include <common>\n#define TDBG ${debugLevel}\n${SPLAT_FRAGMENT_PARS}`)
       .replace('#include <map_fragment>', SPLAT_FRAGMENT);
   };
-  material.customProgramCacheKey = () => 'wc3-terrain';
+  material.customProgramCacheKey = () => `wc3-terrain-${debugLevel}`;
 
   // --- Chunk meshes -----------------------------------------------------------
   const object3D = new Group();
