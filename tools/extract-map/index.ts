@@ -60,17 +60,17 @@ const main = (): void => {
       .filter((t): t is string => t !== undefined),
     'Name',
   );
-  const w3u = archive.read('war3map.w3u');
-  if (w3u) for (const e of parseObjectData(w3u, false)) {
-    const n = modValue(e, 'unam');
-    if (typeof n === 'string') names.set(e.id, n);
-  }
+  const objectNames = (file: string, field: string, into: Map<string, string>): void => {
+    const bytes = archive.read(file);
+    if (!bytes) return;
+    for (const e of parseObjectData(bytes, false)) {
+      const n = modValue(e, field);
+      if (typeof n === 'string') into.set(e.id, n);
+    }
+  };
+  objectNames('war3map.w3u', 'unam', names);
   const destructableNames = new Map<string, string>();
-  const w3b = archive.read('war3map.w3b');
-  if (w3b) for (const e of parseObjectData(w3b, false)) {
-    const n = modValue(e, 'bnam');
-    if (typeof n === 'string') destructableNames.set(e.id, n);
-  }
+  objectNames('war3map.w3b', 'bnam', destructableNames);
   const slk = (name: string): SlkTable => {
     const t = text(name);
     return t ? parseSlk(t) : new Map();
@@ -161,23 +161,31 @@ const main = (): void => {
   log(`  bounds   x ${bounds.minX}..${bounds.maxX}, y ${bounds.minY}..${bounds.maxY} (playable area; camera bounds ${w3i.cameraBounds.slice(0, 4).join(', ')})`);
   log(`  trees    ${data.trees.length} (${data.treeTypes.map((t, i) => `${t.typeId} ${t.style}: ${data.trees.filter((tr) => tr[4] === i).length}`).join(', ')})`);
   const spacing = [...treeSpacingReport(doodads.treeEntries)].sort((a, b) => b[1] - a[1]).slice(0, 4);
-  log(`           nearest-neighbour spacing ${spacing.map(([d, n]) => `${d}u×${n}`).join(', ')} → ${TREE_FOOTPRINT_LABEL}`);
-  log(`  doodads  ${data.doodads.length} decorative, ${doodads.pathingBlockers.length} pathing blockers skipped (${[...new Set(doodads.pathingBlockers.map((d) => d.id))].join(', ')})`);
+  log(`           nearest-neighbour spacing ${spacing.map(([d, n]) => `${d}u ×${n}`).join(', ')} → 4×4-cell (128u) footprints close the walls`);
+  log(`  doodads  ${data.doodads.length} decorative (${new Set(data.doodads.map((d) => d.typeId)).size} types)`);
+  const blockerCounts = new Map<string, number>();
+  for (const d of doodads.pathingBlockers) blockerCounts.set(d.id, (blockerCounts.get(d.id) ?? 0) + 1);
+  log(`  pathing blockers not stamped: ${[...blockerCounts].map(([id, n]) => `${id} ×${n}`).join(', ') || 'none'} (YTlb pathing is cleared by war3map.w3b; YTpb's default footprint is not in the map)`);
   const kinds = [...new Set(data.entities.map((e) => e.kind))] as MapEntityKind[];
   const count = (kind: MapEntityKind, team: Team): number => data.entities.filter((e) => e.kind === kind && e.team === team).length;
   log(`  entities ${data.entities.length}`);
   for (const k of kinds) log(`    ${k.padEnd(16)} sentinel ${count(k, 'sentinel')}  scourge ${count(k, 'scourge')}  neutral ${count(k, 'neutral')}`);
   for (const lane of ['top', 'mid', 'bot'] as Lane[]) {
-    const towers = data.entities.filter((e) => e.kind === 'tower' && e.lane === lane);
-    log(`  lane ${lane.padEnd(3)} ${data.lanes[lane].length} waypoints, towers ${towers.map((t) => `${t.team[1]}${t.tier}`).join(' ')}`);
+    const tiers = (team: Team): string =>
+      data.entities
+        .filter((e) => e.kind === 'tower' && e.lane === lane && e.team === team)
+        .map((t) => `T${t.tier}`)
+        .sort()
+        .join('/');
+    const rax = data.entities.filter((e) => e.kind.startsWith('barracks') && e.lane === lane).length;
+    log(`  lane ${lane.padEnd(3)} ${data.lanes[lane].length} waypoints (Sentinel → Scourge), towers sentinel ${tiers('sentinel')} scourge ${tiers('scourge')}, ${rax} barracks`);
   }
+  log(`  tier-4 towers: ${data.entities.filter((e) => e.kind === 'tower' && e.tier === 4).length}`);
   log(`  unclassified (kind 'other'): ${[...built.unclassified].map(([n, c]) => `${n.trim()} ×${c}`).join(', ') || 'none'}`);
   const problems = [...built.warnings, ...validate(data)];
   log(problems.length ? `  WARNINGS:\n${problems.map((p) => `    - ${p}`).join('\n')}` : '  no warnings');
   log(`Wrote ${OUT_DATA} and ${join(OUT_DEBUG, 'debug.png')}`);
 };
-
-const TREE_FOOTPRINT_LABEL = '4×4-cell tree footprints';
 
 const validate = (data: MapData): string[] => {
   const out: string[] = [];
