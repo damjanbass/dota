@@ -26,6 +26,8 @@ export type AttackType = 'normal' | 'pierce' | 'siege' | 'magic' | 'chaos' | 'sp
 /** WC3 armor types (in-game names; data files call light/heavy "small"/"large"). */
 export type ArmorType = 'unarmored' | 'light' | 'medium' | 'heavy' | 'fortified' | 'hero' | 'divine' | 'normal';
 
+export type DamageType = 'physical' | 'magical' | 'pure';
+
 export type UnitKind =
   | 'hero'
   | 'creep_melee'
@@ -60,6 +62,10 @@ export interface UnitDef {
   attackCooldown: number;
   /** Attack point / windup (seconds). */
   attackPoint: number;
+  /** Attack backswing (seconds) after the attack point. */
+  attackBackswing?: number;
+  /** Auto-acquire radius (unscaled). */
+  acquireRange?: number;
   /** undefined = melee (instant hit at attack point). */
   projectileSpeed?: number;
   moveSpeed: number; // 0 for buildings
@@ -82,6 +88,7 @@ export interface UnitDef {
 
 export type PrimaryAttribute = 'str' | 'agi' | 'int';
 
+/** Stat fields (hp, mana, regen, armor, damage) are level-1 values INCLUDING attribute bonuses; see heroStatsAtLevel() in src/data. */
 export interface HeroDef extends UnitDef {
   kind: 'hero';
   primary: PrimaryAttribute;
@@ -113,6 +120,7 @@ export interface AbilityDef {
   manaCost: number[];
   castRange: number[]; // unscaled; [0] if not applicable
   castPoint: number;
+  damageType?: DamageType;
   /** Ability-specific per-level values: damage, radius, duration, slow, chance, charges, ... */
   values: Record<string, number[]>;
   description: string;
@@ -129,6 +137,10 @@ export interface ItemDef {
   stats: Partial<Record<'str' | 'agi' | 'int' | 'damage' | 'armor' | 'attackSpeed' | 'moveSpeed' | 'hp' | 'mana' | 'hpRegen' | 'manaRegen' | 'attackRange', number>>;
   /** Optional active ability id. */
   active?: string;
+  /** Passive ability ids (crit, lifesteal, bash, ...). */
+  passives?: string[];
+  /** Starting charges for consumables (e.g. Tango 4). */
+  charges?: number;
   components?: string[];
   stackable?: boolean;
   source: string;
@@ -164,6 +176,7 @@ export interface ShotResult {
 /** Cross-module events. Add new events via CONTRACT_REQUESTS.md. */
 export interface GameEvents extends Record<string, unknown> {
   'player:shot': { origin: Vec3; direction: Vec3; result: ShotResult };
+  'player:zoom': { level: 0 | 1 | 2 };
   'player:ability': { abilityId: string; target?: Vec3; targetId?: number };
   'unit:damaged': { targetId: number; sourceId: number | null; amount: number; headshot: boolean };
   'unit:died': { unitId: number; killerId: number | null };
