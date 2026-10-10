@@ -6,9 +6,9 @@
 import type { EventBus } from './events';
 import type { LoadedMap } from './map';
 import type { Rng } from './rng';
-import type { AbilityDef, ArmorType, AttackType, GameEvents, HeroDef, Lane, Team, Tier, UnitDef, UnitKind, Vec2, Vec3 } from './types';
+import type { AbilityDef, ArmorType, AttackType, DamageType, GameEvents, HeroDef, Lane, Team, Tier, UnitDef, UnitKind, Vec2, Vec3 } from './types';
 
-export type DamageType = 'physical' | 'magical' | 'pure';
+export type { DamageType };
 
 export interface Buff {
   /** Stable id; re-applying the same id refreshes it (unless stacking is handled by the ability). */
