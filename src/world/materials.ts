@@ -87,11 +87,8 @@ uniform float uRimStrength;`,
 
 /** Creates a painted material. Geometry needs `color` (vec3) and `aEmissive` (float) attributes. */
 export const createPaintedMaterial = (opts: PaintedOptions = {}): MeshLambertMaterial => {
-  const mat = new MeshLambertMaterial({
-    vertexColors: true,
-    side: opts.doubleSide ? DoubleSide : undefined,
-    flatShading: opts.flatShading ?? false,
-  });
+  const mat = new MeshLambertMaterial({ vertexColors: true, flatShading: opts.flatShading ?? false });
+  if (opts.doubleSide) mat.side = DoubleSide;
   mat.onBeforeCompile = (shader) => patchPainted(shader, opts);
   // Distinct cache keys so variants compile separately.
   mat.customProgramCacheKey = () => `painted:${opts.sway ? 'sway' : ''}:${opts.rim ?? 1}`;

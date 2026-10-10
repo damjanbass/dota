@@ -527,13 +527,50 @@ const roshanPit = (): Built => {
   return o;
 };
 
+// --- Decor ('other' entities on the real map) ---------------------------------------
+
+const ziggurat = (): Built => {
+  const o = start();
+  const { b, glows } = o;
+  b.add(boxB(180, 34, 180), undefined, { color: U.stoneDark, jitter: 3 });
+  b.add(boxB(140, 34, 140), { p: [0, 34, 0] }, { color: U.purple, jitter: 2 });
+  b.add(boxB(100, 30, 100), { p: [0, 68, 0] }, { color: U.stoneDark });
+  b.add(cylB(0, 60, 90, 4), { p: [0, 98, 0], r: [0, Math.PI / 4, 0] }, { color: U.slate, grad: 0.4 });
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+    b.add(horn([sx * 40, 60, sz * 40], [sx * 36, 10, sz * 36], 9, 0.5, 4, 5), { p: [sx * 84, 30, sz * 84] }, { color: U.bone });
+  }
+  b.add(octa(16), { p: [0, 206, 0], s: [0.8, 1.6, 0.8] }, { color: 0x6ab8ff, emissive: 1.2 });
+  glows.push({ p: [0, 206, 0], size: 170, color: 0x5aa8ff, intensity: 0.7 });
+  return o;
+};
+
+const circleOfPower = (team: Team): Built => {
+  const o = start();
+  const { b, glows } = o;
+  const glow = team === 'scourge' ? U.green : S.moon;
+  b.add(cylB(96, 100, 4, 16), undefined, { color: 0x5a5a64 });
+  b.add(torus(80, 5, 3, 16), { p: [0, 5, 0] }, { color: glow, emissive: 0.9 });
+  for (const [x, y, z] of ring(6, 90, 0, 0.2)) {
+    b.add(boxB(14, 26, 10), { p: [x, y, z], r: [0, -Math.atan2(z, x), 0.06] }, { color: 0x7a7a84, jitter: 2 });
+    b.add(box(3, 10, 6), { p: [x * 1.08, 14, z * 1.08], r: [0, -Math.atan2(z, x), 0] }, { color: glow, emissive: 1.1 });
+  }
+  glows.push({ p: [0, 10, 0], size: 180, color: team === 'scourge' ? U.greenGlow : S.moonGlow, intensity: 0.35 });
+  return o;
+};
+
 // --- Public API ---------------------------------------------------------------------
 
 const templates = new Map<string, Group>();
 
-const buildTemplate = (kind: BuildingKind | 'roshan_pit', team: Team, tier: Tier): Built => {
+type TemplateKind = BuildingKind | 'roshan_pit' | 'ziggurat' | 'circle_of_power';
+
+const buildTemplate = (kind: TemplateKind, team: Team, tier: Tier): Built => {
   const scourge = team === 'scourge';
   switch (kind) {
+    case 'ziggurat':
+      return ziggurat();
+    case 'circle_of_power':
+      return circleOfPower(team);
     case 'tower':
       return scourge ? scourgeTower(tier) : sentinelTower(tier);
     case 'barracks_melee':
@@ -557,7 +594,7 @@ const buildTemplate = (kind: BuildingKind | 'roshan_pit', team: Team, tier: Tier
   }
 };
 
-const getTemplate = (kind: BuildingKind | 'roshan_pit', team: Team, tier: Tier): Group => {
+const getTemplate = (kind: TemplateKind, team: Team, tier: Tier): Group => {
   const key = `${kind}:${team}:${tier}`;
   let g = templates.get(key);
   if (g) return g;
@@ -588,6 +625,29 @@ export const createBuildingModel = (kind: BuildingKind, team: Team, tier: Tier =
 
 /** Cave-arch marker for the Roshan pit (opening faces +X). */
 export const createRoshanPitModel = (): Object3D => getTemplate('roshan_pit', 'neutral', 1).clone();
+
+const scaled = (o: Object3D, k: number): Object3D => {
+  o.scale.setScalar(k);
+  o.userData = { ...o.userData, height: (o.userData.height as number) * k, radius: (o.userData.radius as number) * k };
+  return o;
+};
+
+/**
+ * Generic decorative model for non-gameplay structures matched by name (real-map 'other'
+ * entities: Moon Well, Ancient of Wind, Hunter's Hall, Ziggurat, Sacrificial Pit, Boneyard,
+ * Circle of Power). Returns null for unknown names.
+ */
+export const createDecorModel = (name: string, team: Team): Object3D | null => {
+  const n = name.toLowerCase();
+  if (n.includes('moon well')) return scaled(getTemplate('fountain', 'sentinel', 1).clone(), 0.42);
+  if (n.includes('ancient of')) return scaled(getTemplate('barracks_melee', 'sentinel', 1).clone(), 0.75);
+  if (n.includes('hunter')) return scaled(getTemplate('barracks_ranged', 'sentinel', 1).clone(), 0.8);
+  if (n.includes('ziggurat')) return getTemplate('ziggurat', 'scourge', 1).clone();
+  if (n.includes('sacrificial')) return scaled(getTemplate('fountain', 'scourge', 1).clone(), 0.5);
+  if (n.includes('boneyard') || n.includes('crypt')) return scaled(getTemplate('barracks_melee', 'scourge', 1).clone(), 0.75);
+  if (n.includes('circle of power')) return getTemplate('circle_of_power', team, 1).clone();
+  return null;
+};
 
 export const disposeBuildingCache = (): void => {
   for (const g of templates.values()) {
