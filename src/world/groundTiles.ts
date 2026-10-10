@@ -75,11 +75,22 @@ const EXACT: Record<string, GroundLayerId> = {
   Iice: L.Ice,
   Ibsq: L.Tiles,
   Isnw: L.Snow,
-  // Felwood (poison = blight-like)
+  // Felwood (DotA 6.83d's main tileset). Grass reads as lush Ashenvale green for the Sentinel
+  // jungle; the Scourge half is covered by the Blight flag anyway. Poison = blight-like.
   Cpos: L.Blight,
-  Cgrs: L.GrassNorth,
+  Cgrs: L.GrassAshen,
+  Cdrt: L.Dirt,
+  Cdrd: L.DirtRough,
+  Crck: L.Rock,
   Cvin: L.Vines,
-  Clvg: L.Leaves,
+  Clvg: L.GrassLumpy,
+  // Sunken ruins
+  Zvin: L.Vines,
+  Zbks: L.Tiles,
+  Zdrt: L.Dirt,
+  Zdtr: L.DirtRough,
+  Zgrs: L.GrassLord,
+  Zsan: L.Sand,
   // Barrens
   Bdsr: L.Sand,
   Bdsd: L.Sand,
