@@ -32,7 +32,14 @@ export const run: SceneRunner = ({ canvas, ui, map }) => {
   const sx = (x: number): number => ((x - bounds.minX) / w) * size;
   const sy = (y: number): number => size - ((y - bounds.minY) / h) * size;
 
-  // Terrain: height shading + blight tint + water.
+  // Terrain: height shading + blight tint + water. Heights are absolute (real map ground ≈ 1024).
+  let zMin = Infinity;
+  let zMax = -Infinity;
+  for (const z of map.height) {
+    zMin = Math.min(zMin, z);
+    zMax = Math.max(zMax, z);
+  }
+  const zSpan = Math.max(1, zMax - zMin);
   const img = ctx.createImageData(size, size);
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
@@ -43,7 +50,7 @@ export const run: SceneRunner = ({ canvas, ui, map }) => {
       const ti = Math.max(0, Math.min(terrain.rows - 1, ty)) * terrain.cols + Math.max(0, Math.min(terrain.cols - 1, tx));
       const z = map.height[ti]!;
       const flags = map.tileFlags[ti]!;
-      const shade = Math.max(0, Math.min(1, 0.55 + z / 400));
+      const shade = 0.4 + 0.6 * ((z - zMin) / zSpan);
       let r = 60 * shade;
       let g = 120 * shade;
       let b = 50 * shade;
