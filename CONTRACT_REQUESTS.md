@@ -12,3 +12,45 @@ Agents append requests here (what, why, proposed diff). Lead applies or rejects 
 
 ### Lead decision (2026-10-11): B1–B5 applied
 `src/core/types.ts` now has the HeroDef stat-semantics doc, `UnitDef.attackBackswing?` / `acquireRange?`, `ItemDef.passives?` / `charges?`, and `AbilityDef.damageType?`. `DamageType` moved to `types.ts` (re-exported from `sim.ts`). The local workarounds in `src/data` (`UNIT_EXTRAS`, `ITEM_PASSIVES`) stay valid; wave 2 may migrate them.
+
+## C (FPS Feel) #1: Vite watcher ignores every file inside a worktree
+
+**What:** `vite.config.ts` has `server.watch.ignored: ['**/.claude/**', ...]`. Every agent worktree lives under
+`.claude/worktrees/<id>/`, so inside a worktree that glob matches *all* project files. The dev server never
+invalidates its module cache: edits are not picked up until the server restarts. Because
+`playwright.config.ts` uses `reuseExistingServer: true`, an e2e run can silently test stale code if a dev server
+from an earlier edit is still running on that port.
+
+**Why:** C hit this while iterating (screenshots didn't change after edits). Worked around it by restarting the
+server before every check.
+
+**Proposed diff** (`vite.config.ts`): ignore only the `.claude` folder next to the config, not any path containing `.claude`.
+
+```diff
+-import { defineConfig } from 'vitest/config';
++import { fileURLToPath } from 'node:url';
++import { defineConfig } from 'vitest/config';
++
++const claudeDir = fileURLToPath(new URL('./.claude/', import.meta.url));
+ ...
+-  server: { port, strictPort: true, watch: { ignored: ['**/.claude/**', '**/source-map/**'] } },
++  server: {
++    port,
++    strictPort: true,
++    watch: { ignored: [(p: string) => p.replaceAll('\\', '/').startsWith(claudeDir.replaceAll('\\', '/')), '**/source-map/**'] },
++  },
+```
+
+## C (FPS Feel) #2: optional `'player:zoom'` event
+
+**What:** add `'player:zoom': { level: 0 | 1 | 2 }` to `GameEvents`.
+
+**Why:** UI/audio (H) will want a scope sound and HUD change on zoom, and Take Aim (F) may react to it.
+Right now they can poll `player.scope.zoomLevel` and `player.scope.isScoped`, which works, so this is a
+convenience only. C does not emit it until it is accepted.
+
+```diff
+ export interface GameEvents extends Record<string, unknown> {
+   'player:shot': { origin: Vec3; direction: Vec3; result: ShotResult };
++  'player:zoom': { level: 0 | 1 | 2 };
+```
