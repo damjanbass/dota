@@ -109,7 +109,7 @@ export const SNIPER_SHRAPNEL: AbilityDef = {
   source:
     '6.83d map: A2ZO (learned skill, Researchubertip "12/24/36/48 DPS, 15-30% slow, 10 s, 40 s charge replenish, 3 charges, 50 mana"); ' +
     'A2ZP/A064/A2ZQ/A2ZR charge abilities (AHbz, Rng 1800, Area 450, Cost 50, no cooldown); A19F slow (Aslo 0.15-0.3, Dur 2); ' +
-    'war3map.j NT3/NS3/NN3/NM3 (0.4 s + 0.4 s delay, 1 s ticks x10, radius 450+25, damage level*12, 1.1 s lockout, structures excluded), NP3/NU3 (3 charges, 40 s)',
+    'war3map.j NT3/NS3/NN3/NM3 (0.4 s + 0.4 s delay, 1 s ticks x10, radius 450+25, damage level*12 via P6I type 1 = ATTACK_TYPE_NORMAL/DAMAGE_TYPE_FIRE (magical), 1.1 s lockout, structures excluded), NP3/NU3 (3 charges, 40 s), I41 (9.4 s / 360 vision)',
 };
 
 export const SNIPER_HEADSHOT: AbilityDef = {
