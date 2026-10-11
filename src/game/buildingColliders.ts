@@ -47,11 +47,17 @@ export interface BuildingColliders extends ObstacleProvider {
   remove(entityId: number): void;
 }
 
-export const createBuildingColliders = (map: LoadedMap): BuildingColliders => {
+/**
+ * `footprints` (entityId → radius) lets the caller widen colliders to the rendered model's footprint,
+ * so the player can't walk into a plinth that is visually wider than the DotA collision radius.
+ */
+export const createBuildingColliders = (map: LoadedMap, footprints?: ReadonlyMap<number, number>): BuildingColliders => {
   const byId = new Map<number, ShotBlocker>();
   for (const e of map.data.entities) {
     const size = sizeFor(e);
-    if (size) byId.set(e.id, { x: e.x, y: e.y, z: e.z, radius: size.radius, height: size.height });
+    if (!size) continue;
+    const radius = Math.max(size.radius, footprints?.get(e.id) ?? 0);
+    byId.set(e.id, { x: e.x, y: e.y, z: e.z, radius, height: size.height });
   }
   let blockers: ShotBlocker[] = [...byId.values()];
   const near: Obstacle[] = [];
