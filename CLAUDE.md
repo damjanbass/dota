@@ -3,7 +3,7 @@
 This is the WC3 **DotA Allstars v6.83d** map (Frozen Throne, not Dota 2) rebuilt as a browser first-person shooter. The only playable hero is Sniper (Kardel Sharpeye).
 - Controls: WASD to move, mouse to look, LMB to shoot, RMB/E to scope (Take Aim).
 - Abilities: Q Shrapnel, R Assassinate, F Town Portal Scroll. Headshot is a passive that triggers on real headshots.
-- Full plan: `C:\Users\PC\.claude\plans\act-as-the-best-serene-cat.md`.
+- Full plan: `docs/PLAN.md`. **Current status and next steps: `docs/HANDOFF.md`** (read it first).
 
 ## Stack and commands
 Vite 8, TypeScript 7 (strict), three r186, Vitest 4, Playwright. No React. UI is a plain DOM overlay in `#ui`.
@@ -11,7 +11,7 @@ Vite 8, TypeScript 7 (strict), three r186, Vitest 4, Playwright. No React. UI is
 - `npm run typecheck`, `npm test` (Vitest), `npm run e2e` (Playwright smoke + your own specs).
 - **Parallel agents must set their own port**: `PORT=<your port> npm run e2e` (bash). Never use 5173 from a worktree.
 - `npm run extract`: `.w3x` → `public/data/` (agent A).
-- The source map lives at `D:\Projekti Vibe Code\Dota\source-map\` (gitignored, absolute path, not present in worktrees).
+- The source map goes in `source-map/DotA v6.83d.w3x` at the main checkout. It is gitignored and not in the repo; bring your own copy. Worktrees don't have it, so use its absolute path from there. The extracted `public/data/` is committed.
 
 ## Hard contracts (owned by Lead, read-only for agents)
 `src/core/*` (types, map, coords, config, loop, events, rng, scene, mockMap), `src/main.ts`, `src/game/*`, `tests/e2e/smoke.spec.ts`, `vite.config.ts`, `playwright.config.ts`, `tsconfig.json`, this file.
@@ -49,5 +49,5 @@ Vite 8, TypeScript 7 (strict), three r186, Vitest 4, Playwright. No React. UI is
 
 ## Finishing a task (agents)
 1. `npm run typecheck`, `npm test` and `PORT=<port> npm run e2e` must all pass.
-2. Commit on your worktree branch (local only, **never push**). Message: `<area>: <summary>`, ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+2. Commit on your worktree branch. Agents **never push**; the maintainer merges and pushes. Message: `<area>: <summary>`, ending with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 3. Report back with: what's done, what's not, any contract requests, the dependencies you added, and screenshot paths.

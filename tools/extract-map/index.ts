@@ -23,8 +23,9 @@ import { parseW3i } from './formats/w3i';
 import { parseWpm } from './formats/wpm';
 import { MpqArchive } from './mpq/archive';
 
-const DEFAULT_MAP = 'D:\\Projekti Vibe Code\\Dota\\source-map\\DotA v6.83d.w3x';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+/** Bring your own copy of the map (gitignored). Override with a CLI path argument. */
+const DEFAULT_MAP = join(ROOT, 'source-map', 'DotA v6.83d.w3x');
 const OUT_DATA = join(ROOT, 'public', 'data');
 const OUT_DEBUG = join(ROOT, 'tools', 'extract-map', 'out');
 
