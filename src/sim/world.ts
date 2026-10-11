@@ -788,6 +788,7 @@ export class World implements SimWorld {
       const target = this.byId.get(p.targetId);
       if (!target) {
         p.done = true;
+        this.events.emit('projectile:hit', { projectileId: p.id, targetId: p.targetId });
         continue;
       }
       const tz = target.position.z + (target.extra?.impactZ ?? 60);
@@ -801,10 +802,9 @@ export class World implements SimWorld {
         p.y = target.position.y;
         p.z = tz;
         p.done = true;
-        if (target.alive) {
-          p.onHit();
-          this.events.emit('projectile:hit', { projectileId: p.id, targetId: p.targetId });
-        }
+        // onHit only for a living target; the event always fires so renderers can drop the projectile.
+        if (target.alive) p.onHit();
+        this.events.emit('projectile:hit', { projectileId: p.id, targetId: p.targetId });
         continue;
       }
       p.x += (dx / d) * step;

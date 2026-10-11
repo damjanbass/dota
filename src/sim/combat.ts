@@ -124,13 +124,17 @@ export const fight = (w: World, u: SimUnit, t: SimUnit, dt: number, canMove: boo
   return Fight.Chasing;
 };
 
+/** Projectile visual id: 'tower_<team>', 'fountain_<team>', else the attacker's def id. */
+export const attackVisual = (u: SimUnit): string =>
+  u.kind === 'tower' ? `tower_${u.team}` : u.kind === 'fountain' ? `fountain_${u.team}` : u.def.id;
+
 /** The attack point: melee damage now, ranged as a homing projectile. */
 const releaseAttack = (w: World, u: SimUnit, t: SimUnit): void => {
   w.events.emit('unit:attack', { sourceId: u.id, targetId: t.id });
   w.breakInvisibility(u);
   if (u.hero && t.hero && t.team !== u.team) onHeroAttacksHero(w, u, t);
   if (u.ranged && u.def.projectileSpeed) {
-    w.launchInternalProjectile(u, t, u.def.projectileSpeed, `attack:${u.def.id}`, () => {
+    w.launchInternalProjectile(u, t, u.def.projectileSpeed, attackVisual(u), () => {
       resolveAttack(w, u, t, false);
     });
   } else {

@@ -166,6 +166,28 @@ describe('player rifle', () => {
   });
 });
 
+describe('creep aggro', () => {
+  it('enemy creeps near a hero that attacks their hero switch to that hero, then give up a chase', () => {
+    const sim = quiet([], ['lion']);
+    const player = sim.player();
+    sim.teleport(player.id, 0, 0);
+    const lion = sim.units().find((u) => u.def.id === 'lion')! as SimUnit;
+    sim.teleport(lion.id, 600, 0);
+    const bait = sim.spawn('sentinel_creep_melee', 'sentinel', 450, 300) as SimUnit;
+    const creep = sim.spawn('scourge_creep_melee', 'scourge', 420, 200) as SimUnit;
+    const far = sim.spawn('scourge_creep_melee', 'scourge', 3000, 3000) as SimUnit;
+    run(sim, 0.5);
+    expect(creep.targetId).toBe(bait.id);
+    shoot(sim, lion);
+    expect(creep.targetId).toBe(player.id);
+    expect(far.targetId).not.toBe(player.id);
+    // The player walks away: the creep chases briefly, then drops the player.
+    sim.teleport(player.id, -2500, 0);
+    run(sim, 6);
+    expect(creep.targetId).not.toBe(player.id);
+  });
+});
+
 describe('XP', () => {
   it('creep XP is split evenly among enemy heroes in range', () => {
     const sim = quiet(['lion']);
