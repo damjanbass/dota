@@ -21,8 +21,8 @@ import type { TerrainGrid } from './terrainGrid';
 import { createGroundTextures } from './terrainTextures';
 import type { GroundTextures } from './terrainTextures';
 
-/** Tiles per chunk edge. */
-export const CHUNK_TILES = 16;
+/** Tiles per terrain chunk edge (32 → 16 chunks on DotA's 128×128 map; few draw calls). */
+export const CHUNK_TILES = 32;
 
 export interface Terrain {
   object3D: Group;

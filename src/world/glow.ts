@@ -34,11 +34,14 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4(aGlow.xyz, 1.0);
   float pulse = 1.0 + 0.07 * sin(uTime * 2.1 + aGlow.x * 0.05 + aGlow.y * 0.03);
   float size = aGlow.w * pulse;
+  // Fade out when the camera gets close so halos never flood the screen.
+  float dist = -mvPosition.z;
+  float nearFade = smoothstep(size * 0.35, size * 1.4, dist);
   mvPosition.xy += position.xy * size;
   mvPosition.z += size * 0.45;
   gl_Position = projectionMatrix * mvPosition;
   vUv = uv;
-  vColor = aGlowColor;
+  vColor = vec4(aGlowColor.rgb, aGlowColor.a * nearFade);
   #include <fog_vertex>
 }
 `;
@@ -115,8 +118,17 @@ export const createGlowMesh = (glows: readonly GlowSpec[]): Mesh | null => {
   geo.boundingSphere!.radius = maxR;
   const mesh = new Mesh(geo as BufferGeometry, glowMaterial());
   mesh.name = 'glow';
+  mesh.userData.baseIntensity = Float32Array.from(glows, (g) => g.intensity ?? 1);
   mesh.renderOrder = 5;
   return mesh;
+};
+
+/** Shows/hides glows [start, start+count) of a glow mesh built by createGlowMesh. */
+export const setGlowsVisible = (mesh: Mesh, start: number, count: number, visible: boolean): void => {
+  const attr = (mesh.geometry as InstancedBufferGeometry).getAttribute('aGlowColor') as InstancedBufferAttribute;
+  const base = mesh.userData.baseIntensity as Float32Array;
+  for (let i = start; i < start + count; i++) attr.setW(i, visible ? base[i]! : 0);
+  attr.needsUpdate = true;
 };
 
 export const disposeGlowShared = (): void => {

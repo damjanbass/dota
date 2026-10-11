@@ -610,21 +610,43 @@ const getTemplate = (kind: TemplateKind, team: Team, tier: Tier): Group => {
   const glow = createGlowMesh(glows);
   if (glow) g.add(glow);
   const bb = geo.boundingBox!;
-  g.userData = { kind, team, tier, height: bb.max.y, radius: Math.max(bb.max.x, -bb.min.x, bb.max.z, -bb.min.z), triangles: geo.getAttribute('position').count / 3 };
+  g.userData = {
+    kind,
+    team,
+    tier,
+    height: bb.max.y,
+    radius: Math.max(bb.max.x, -bb.min.x, bb.max.z, -bb.min.z),
+    triangles: geo.getAttribute('position').count / 3,
+    glows,
+  };
   templates.set(key, g);
   return g;
+};
+
+export interface BuildingModelOptions {
+  /**
+   * Include the additive glow-billboard child (default true). The world turns this off and draws
+   * every building's glows (userData.glows, model space) in one shared mesh instead.
+   */
+  glow?: boolean;
+}
+
+const instance = (tpl: Group, opts: BuildingModelOptions): Object3D => {
+  const o = tpl.clone();
+  if (opts.glow === false) o.children.filter((c) => c.name === 'glow').forEach((c) => o.remove(c));
+  return o;
 };
 
 /**
  * Builds a WC3-style building model facing +X (rotate with `rotation.y = facing`), base at y = 0,
  * sized in WC3 units. Geometry is shared between calls; dispose with `disposeBuildingCache()`.
- * userData: { kind, team, tier, height, radius, triangles }.
+ * userData: { kind, team, tier, height, radius, triangles, glows }.
  */
-export const createBuildingModel = (kind: BuildingKind, team: Team, tier: Tier = 1): Object3D =>
-  getTemplate(kind, team, kind === 'tower' ? tier : 1).clone();
+export const createBuildingModel = (kind: BuildingKind, team: Team, tier: Tier = 1, opts: BuildingModelOptions = {}): Object3D =>
+  instance(getTemplate(kind, team, kind === 'tower' ? tier : 1), opts);
 
 /** Cave-arch marker for the Roshan pit (opening faces +X). */
-export const createRoshanPitModel = (): Object3D => getTemplate('roshan_pit', 'neutral', 1).clone();
+export const createRoshanPitModel = (opts: BuildingModelOptions = {}): Object3D => instance(getTemplate('roshan_pit', 'neutral', 1), opts);
 
 const scaled = (o: Object3D, k: number): Object3D => {
   o.scale.setScalar(k);
@@ -637,15 +659,16 @@ const scaled = (o: Object3D, k: number): Object3D => {
  * entities: Moon Well, Ancient of Wind, Hunter's Hall, Ziggurat, Sacrificial Pit, Boneyard,
  * Circle of Power). Returns null for unknown names.
  */
-export const createDecorModel = (name: string, team: Team): Object3D | null => {
+export const createDecorModel = (name: string, team: Team, opts: BuildingModelOptions = {}): Object3D | null => {
   const n = name.toLowerCase();
-  if (n.includes('moon well')) return scaled(getTemplate('fountain', 'sentinel', 1).clone(), 0.42);
-  if (n.includes('ancient of')) return scaled(getTemplate('barracks_melee', 'sentinel', 1).clone(), 0.75);
-  if (n.includes('hunter')) return scaled(getTemplate('barracks_ranged', 'sentinel', 1).clone(), 0.8);
-  if (n.includes('ziggurat')) return getTemplate('ziggurat', 'scourge', 1).clone();
-  if (n.includes('sacrificial')) return scaled(getTemplate('fountain', 'scourge', 1).clone(), 0.5);
-  if (n.includes('boneyard') || n.includes('crypt')) return scaled(getTemplate('barracks_melee', 'scourge', 1).clone(), 0.75);
-  if (n.includes('circle of power')) return getTemplate('circle_of_power', team, 1).clone();
+  const t = (kind: TemplateKind, tm: Team): Object3D => instance(getTemplate(kind, tm, 1), opts);
+  if (n.includes('moon well')) return scaled(t('fountain', 'sentinel'), 0.42);
+  if (n.includes('ancient of')) return scaled(t('barracks_melee', 'sentinel'), 0.75);
+  if (n.includes('hunter')) return scaled(t('barracks_ranged', 'sentinel'), 0.8);
+  if (n.includes('ziggurat')) return t('ziggurat', 'scourge');
+  if (n.includes('sacrificial')) return scaled(t('fountain', 'scourge'), 0.5);
+  if (n.includes('boneyard') || n.includes('crypt')) return scaled(t('barracks_melee', 'scourge'), 0.75);
+  if (n.includes('circle of power')) return t('circle_of_power', team);
   return null;
 };
 

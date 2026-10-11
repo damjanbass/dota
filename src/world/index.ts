@@ -1,8 +1,8 @@
 // Public world API: renders a LoadedMap (real or mock) in a WC3 art style.
 //   const world = createWorld({ scene, renderer, map });
 //   loop: world.update(dt, camera.position); renderer.render(scene, camera);
-import { Group, PCFShadowMap } from 'three';
-import type { Object3D, Scene, Vector3, WebGLRenderer } from 'three';
+import { Group, PCFShadowMap, Vector3 } from 'three';
+import type { Mesh, Object3D, Scene, WebGLRenderer } from 'three';
 import { facingToThreeYaw, toThree } from '../core/coords';
 import type { LoadedMap } from '../core/map';
 import { createBuildingModel, createDecorModel, createRoshanPitModel, disposeBuildingCache, isBuildingKind } from './buildings';
@@ -10,7 +10,8 @@ import { createDayNight } from './daynight';
 import type { DayNight } from './daynight';
 import { createDoodads, disposeDoodadCache } from './doodads';
 import type { DoodadKind } from './doodads';
-import { disposeGlowShared } from './glow';
+import { createGlowMesh, disposeGlowShared, setGlowsVisible } from './glow';
+import type { GlowSpec } from './glow';
 import { disposeSharedMaterials, worldUniforms } from './materials';
 import { createSky } from './sky';
 import { createTerrain } from './terrain';
@@ -73,6 +74,8 @@ export interface World {
   update(dt: number, cameraPos: Vector3): void;
   setTimeOfDay(t01: number): void;
   readonly timeOfDay: number;
+  /** Hide/show a placed building (and its glows) by map entity id, e.g. when destroyed. */
+  setBuildingVisible(entityId: number, visible: boolean): void;
   /** Hide/show a tree by its index in map.data.trees (cut-down trees). */
   setTreeVisible(index: number, visible: boolean): void;
   getStats(): WorldStats;
@@ -108,14 +111,19 @@ export const createWorld = ({ scene, renderer, map, timeOfDay = 0.4, shadows = t
   buildingGroup.name = 'buildings';
   root.add(buildingGroup);
   const buildings = new Map<number, Object3D>();
+  // All building glows go into ONE world-space billboard mesh (1 draw call).
+  const glows: GlowSpec[] = [];
+  const glowRange = new Map<number, [number, number]>();
+  const gp = new Vector3();
+  const noGlow = { glow: false };
   for (const e of map.data.entities) {
     let model: Object3D | null = null;
     let facing = e.facing;
-    if (isBuildingKind(e.kind)) model = createBuildingModel(e.kind, e.team, e.tier ?? 1);
+    if (isBuildingKind(e.kind)) model = createBuildingModel(e.kind, e.team, e.tier ?? 1, noGlow);
     else if (e.kind === 'roshan') {
-      model = createRoshanPitModel();
+      model = createRoshanPitModel(noGlow);
       facing = roshanPitFacing(map, e.x, e.y);
-    } else if (e.kind === 'other') model = createDecorModel(e.name, e.team);
+    } else if (e.kind === 'other') model = createDecorModel(e.name, e.team, noGlow);
     if (!model) continue;
     // Sit on the lowest ground under the footprint so nothing floats on slopes.
     const r = ((model.userData.radius as number | undefined) ?? 100) * 0.6;
@@ -128,9 +136,18 @@ export const createWorld = ({ scene, renderer, map, timeOfDay = 0.4, shadows = t
       o.matrixAutoUpdate = false;
       o.updateMatrix();
     });
+    model.updateMatrixWorld(true);
+    const specs = (model.userData.glows as GlowSpec[] | undefined) ?? [];
+    glowRange.set(e.id, [glows.length, specs.length]);
+    for (const g of specs) {
+      gp.set(g.p[0], g.p[1], g.p[2]).applyMatrix4(model.matrixWorld);
+      glows.push({ p: [gp.x, gp.y, gp.z], size: g.size * model.scale.x, color: g.color, intensity: g.intensity });
+    }
     buildingGroup.add(model);
     buildings.set(e.id, model);
   }
+  const glowMesh: Mesh | null = createGlowMesh(glows);
+  if (glowMesh) root.add(glowMesh);
 
   scene.add(root);
   dayNight.setTimeOfDay(timeOfDay);
@@ -152,6 +169,12 @@ export const createWorld = ({ scene, renderer, map, timeOfDay = 0.4, shadows = t
       return dayNight.timeOfDay;
     },
     setTreeVisible: (i, v) => trees.setTreeVisible(i, v),
+    setBuildingVisible: (id, visible) => {
+      const m = buildings.get(id);
+      if (m) m.visible = visible;
+      const r = glowRange.get(id);
+      if (r && glowMesh && r[1] > 0) setGlowsVisible(glowMesh, r[0], r[1], visible);
+    },
     getStats: () => ({
       drawCalls: renderer.info.render.calls,
       triangles: renderer.info.render.triangles,
@@ -172,6 +195,7 @@ export const createWorld = ({ scene, renderer, map, timeOfDay = 0.4, shadows = t
       trees.dispose();
       doodads.dispose();
       sky.dispose();
+      glowMesh?.geometry.dispose();
       dayNight.dispose();
       disposeBuildingCache();
       disposeTreeGeometries();
