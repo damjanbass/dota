@@ -2,8 +2,9 @@
 // on slopes instead of clipping into them. Render-only; positions in three.js space.
 import { BufferAttribute, BufferGeometry, Mesh } from 'three';
 import type { Material } from 'three';
-import { groundHeightAt } from '../../../core/map';
-import type { LoadedMap } from '../../../core/map';
+
+/** Ground height (WC3 z) at WC3 (x, y): core groundHeightAt, or the world renderer's visual heightAt. */
+export type HeightFn = (x: number, y: number) => number;
 
 export class DrapedAnnulus {
   readonly mesh: Mesh;
@@ -47,7 +48,7 @@ export class DrapedAnnulus {
   }
 
   /** Places the annulus (WC3 centre, inner / outer radius) on the terrain, `lift` units above it. */
-  set(map: LoadedMap, x: number, y: number, inner: number, outer: number, lift = 5): void {
+  set(heightAt: HeightFn, x: number, y: number, inner: number, outer: number, lift = 5): void {
     const cols = this.segments + 1;
     for (let r = 0; r <= this.rings; r++) {
       const rad = inner + ((outer - inner) * r) / this.rings;
@@ -58,7 +59,7 @@ export class DrapedAnnulus {
         // three = (x, z, -y), see core/coords.ts.
         const j = (r * cols + s) * 3;
         this.positions[j] = wx;
-        this.positions[j + 1] = groundHeightAt(map, wx, wy) + lift;
+        this.positions[j + 1] = heightAt(wx, wy) + lift;
         this.positions[j + 2] = -wy;
       }
     }

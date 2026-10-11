@@ -13,14 +13,13 @@ import {
   Vector3,
 } from 'three';
 import type { Scene, Texture } from 'three';
-import { groundHeightAt } from '../../../core/map';
-import type { LoadedMap } from '../../../core/map';
 import type { SimApi } from '../../../core/sim';
 import { SNIPER_SHRAPNEL, levelValue } from '../../../data';
 import { SHRAPNEL, skillLevel } from '../ids';
 import type { KitLogic } from '../kitLogic';
 import type { ShrapnelField } from '../shrapnel';
 import { DrapedAnnulus } from './drape';
+import type { HeightFn } from './drape';
 import { Particles, softTexture } from './particles';
 
 const SHELLS = 160;
@@ -78,7 +77,7 @@ export class ShrapnelVfx {
 
   constructor(
     private readonly scene: Scene,
-    private readonly map: LoadedMap,
+    private readonly heightAt: HeightFn,
   ) {
     const ringMat = (color: number, opacity: number): MeshBasicMaterial =>
       new MeshBasicMaterial({
@@ -199,9 +198,9 @@ export class ShrapnelVfx {
     this.edgeMat.opacity = (strong ? 0.85 : 0.32) * k;
     this.fillMat.opacity = (strong ? 0.12 : 0.045) * k;
     this.centerMat.opacity = (strong ? 0.9 : 0.4) * k;
-    this.previewEdge.set(this.map, aim.x, aim.y, radius - (strong ? 7 : 4), radius + (strong ? 7 : 4), 6);
-    this.previewFill.set(this.map, aim.x, aim.y, 0, radius, 5);
-    this.previewCenter.set(this.map, aim.x, aim.y, 14, 22, 6);
+    this.previewEdge.set(this.heightAt, aim.x, aim.y, radius - (strong ? 7 : 4), radius + (strong ? 7 : 4), 6);
+    this.previewFill.set(this.heightAt, aim.x, aim.y, 0, radius, 5);
+    this.previewCenter.set(this.heightAt, aim.x, aim.y, 14, 22, 6);
     this.setPreviewVisible(true);
   }
 
@@ -239,7 +238,7 @@ export class ShrapnelVfx {
 
   private updateField(vis: FieldVisual, f: ShrapnelField, now: number, dt: number): void {
     if (!vis.placed) {
-      vis.edge.set(this.map, f.x, f.y, f.radius - 10, f.radius + 10, 6);
+      vis.edge.set(this.heightAt, f.x, f.y, f.radius - 10, f.radius + 10, 6);
       vis.placed = true;
     }
     const t = now - f.startAt;
@@ -273,7 +272,7 @@ export class ShrapnelVfx {
       const r = rim ? f.radius * (0.86 + Math.random() * 0.2) : f.radius * Math.sqrt(Math.random()) * 0.85;
       const wx = f.x + Math.cos(a) * r;
       const wy = f.y + Math.sin(a) * r;
-      const gz = groundHeightAt(this.map, wx, wy);
+      const gz = this.heightAt(wx, wy);
       this.dust.spawn({
         x: wx,
         y: gz + 30 + Math.random() * 50,
@@ -302,7 +301,7 @@ export class ShrapnelVfx {
     const r = f.radius * Math.sqrt(Math.random()) * 0.95;
     const wx = f.x + Math.cos(a) * r;
     const wy = f.y + Math.sin(a) * r;
-    const gy = groundHeightAt(this.map, wx, wy);
+    const gy = this.heightAt(wx, wy);
     const fall = 1100 + Math.random() * 500;
     const tilt = 0.18;
     const dx = (Math.random() - 0.5) * fall * tilt;
