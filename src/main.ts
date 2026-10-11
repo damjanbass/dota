@@ -3,6 +3,7 @@ import type { SceneRunner } from './core/scene';
 
 // Scene router: ?scene=<name>. Each area owns its dev scene; Lead owns this table.
 const scenes: Record<string, () => Promise<{ run: SceneRunner }>> = {
+  game: () => import('./game/game'),
   preview: () => import('./game/mapPreview'),
   world: () => import('./world/dev'),
   fps: () => import('./player/dev'),
@@ -13,7 +14,7 @@ const scenes: Record<string, () => Promise<{ run: SceneRunner }>> = {
 };
 
 const boot = async (): Promise<void> => {
-  const name = new URLSearchParams(location.search).get('scene') ?? 'preview';
+  const name = new URLSearchParams(location.search).get('scene') ?? 'game';
   const loader = scenes[name];
   if (!loader) throw new Error(`Unknown scene "${name}". Available: ${Object.keys(scenes).join(', ')}`);
   window.__sceneName = name;
