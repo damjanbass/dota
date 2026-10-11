@@ -785,8 +785,8 @@ export class FakeSim implements Sim {
     }
     if (u.hero?.isPlayer) return; // kinematic, driven by tests / the player controller
     const isBuildingish = u.def.moveSpeed === 0;
-    // Auto-acquire for units without a brain (creeps, towers, neutrals).
-    if (!this.brains.has(u.id) && (u.order.type === 'idle' || u.order.type === 'attackMove' || u.order.type === 'hold')) {
+    // Auto-acquire for non-hero units without a brain (creeps, towers, neutrals). Heroes only act on orders.
+    if (!u.hero && !this.brains.has(u.id) && (u.order.type === 'idle' || u.order.type === 'attackMove' || u.order.type === 'hold')) {
       const acquire = scaledRange(Math.max(u.def.attackRange, isBuildingish ? u.def.attackRange : 500));
       const e = u.def.attackRange > 0 ? this.nearestEnemy(u, acquire) : undefined;
       if (e) {
