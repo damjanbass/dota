@@ -322,10 +322,14 @@ const PAINTERS: Record<number, Painter> = {
     detail: seq(cracks(0x5a7a3a, 40, 120, 3, 0.8), leaves([0x4a8a3a, 0x6aaa4a, 0x2f6a30], 700, 6)),
   },
   [GroundLayer.Tiles]: {
-    base: [0x76767c, 0x8c8c92, 0x7e7a78],
+    base: [0x5a5c50, 0x6e6e62, 0x56604a],
     freq: 4,
-    grain: 0.1,
-    detail: seq(slabs(0x3e3c40, [0x9a9aa0, 0x86868c, 0xa49e94, 0x7c7c84], 4), cracks(0x4a484c, 10, 40, 1.2, 0.4)),
+    grain: 0.14,
+    detail: seq(
+      slabs(0x2c2e26, [0x7a7a70, 0x6a6c62, 0x84806e, 0x62665a], 5),
+      cracks(0x34342c, 18, 40, 1.4, 0.5),
+      blobs([0x3f6a32, 0x4a7a3a], 26, 14, 40, 0.55),
+    ),
   },
   [GroundLayer.Sand]: {
     base: [0xb89c6c, 0xd0b884, 0xc4aa78],
@@ -349,15 +353,15 @@ const PAINTERS: Record<number, Painter> = {
     base: [0x6a5a4a, 0x8a7a64, 0x75665a],
     freq: 3,
     grain: 0.14,
-    strata: 0.28,
-    detail: seq(cracks(0x3a3028, 30, 80, 2.2, 0.55), pebbles([0x9a8a74, 0x7a6c5c], 40, 6, 16, 0.4)),
+    strata: 0.45,
+    detail: seq(cracks(0x2e261e, 46, 90, 2.6, 0.65), cracks(0xa89880, 20, 50, 1.2, 0.35)),
   },
   [GroundLayer.CliffDark]: {
     base: [0x3e3846, 0x5a5466, 0x4a4454],
     freq: 3,
     grain: 0.14,
-    strata: 0.28,
-    detail: seq(cracks(0x1e1a24, 30, 80, 2.2, 0.6), pebbles([0x6a6478, 0x55506a], 40, 6, 16, 0.4)),
+    strata: 0.45,
+    detail: seq(cracks(0x16121c, 46, 90, 2.6, 0.7), cracks(0x7a7488, 20, 50, 1.2, 0.35)),
   },
   [GroundLayer.Dark]: {
     base: [0x241e22, 0x3a3034, 0x2e2628],

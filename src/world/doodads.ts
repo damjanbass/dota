@@ -48,8 +48,9 @@ const buildGeo = (kind: DoodadKind): BufferGeometry => {
       b.add(dodeca(20), { p: [34, 6, 18], s: [1, 0.7, 1] }, { color: 0x8a8476, jitter: 4, seed: 2 });
       break;
     case 'bush':
-      b.add(ico(30, 1), { p: [0, 18, 0], s: [1.2, 0.75, 1.1] }, { color: 0x3c7a36, jitter: 5, grad: 0.55, seed: 3 });
-      b.add(ico(20, 0), { p: [22, 14, -12] }, { color: 0x4a8a3e, jitter: 3, grad: 0.5, seed: 4 });
+      b.add(ico(17, 1), { p: [0, 12, 0], s: [1.2, 0.8, 1.1] }, { color: 0x4f9a40, jitter: 3, grad: 0.55, seed: 3 });
+      b.add(ico(12, 0), { p: [14, 9, -8] }, { color: 0x5aa848, jitter: 2, grad: 0.5, seed: 4 });
+      b.add(ico(11, 0), { p: [-12, 8, 9] }, { color: 0x468a3a, jitter: 2, grad: 0.5, seed: 5 });
       break;
     case 'fern':
       for (let i = 0; i < 7; i++) {

@@ -122,7 +122,7 @@ export const createWorld = ({ scene, renderer, map, timeOfDay = 0.4, shadows = t
     if (isBuildingKind(e.kind)) model = createBuildingModel(e.kind, e.team, e.tier ?? 1, noGlow);
     else if (e.kind === 'roshan') {
       model = createRoshanPitModel(noGlow);
-      facing = roshanPitFacing(map, e.x, e.y);
+      facing = roshanPitFacing(map, e.x, e.y, terrain.heightAt);
     } else if (e.kind === 'other') model = createDecorModel(e.name, e.team, noGlow);
     if (!model) continue;
     // Sit on the lowest ground under the footprint so nothing floats on slopes.

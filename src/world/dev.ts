@@ -70,7 +70,7 @@ const demoUnitsForView = (map: LoadedMap, world: World, view: MapViewName, anim:
   } else if (view === 'roshan') {
     const r = map.data.entities.find((e) => e.kind === 'roshan');
     if (!r) return;
-    const f = roshanPitFacing(map, r.x, r.y);
+    const f = roshanPitFacing(map, r.x, r.y, world.heightAt);
     placeUnit(world, 'roshan', r.x - Math.cos(f) * 60, r.y - Math.sin(f) * 60, f, anim ?? 'idle', units);
   } else if (view === 'sentinel_base' || view === 'scourge_base') {
     const team = view === 'sentinel_base' ? 'sentinel' : 'scourge';
@@ -108,7 +108,7 @@ const showcaseView = (view: ShowcaseView): ViewPreset => {
   if (view === 'showcase_units') {
     return { position: { x: 0, y: -260, z: g + 150 }, target: { x: 0, y: SHOWCASE_ROWS.units + 150, z: g + 60 } };
   }
-  return { position: { x: 0, y: -2300, z: g + 760 }, target: { x: 0, y: SHOWCASE_ROWS.middle, z: g + 120 } };
+  return { position: { x: 0, y: -1000, z: g + 420 }, target: { x: 0, y: SHOWCASE_ROWS.middle, z: g + 180 } };
 };
 
 export const run: SceneRunner = async ({ canvas, ui, map: loadedMap }) => {

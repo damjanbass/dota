@@ -53,7 +53,7 @@ varying vec4 vColor;
 void main() {
   float d = length(vUv - 0.5) * 2.0;
   float a = pow(max(1.0 - d, 0.0), 2.2) + 0.5 * pow(max(1.0 - d, 0.0), 8.0);
-  vec3 col = vColor.rgb * a * vColor.a;
+  vec3 col = vColor.rgb * a * vColor.a * 0.8;
   #ifdef USE_FOG
     float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
     col *= 1.0 - fogFactor;
