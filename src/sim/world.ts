@@ -38,7 +38,7 @@ import { TUNABLES } from './tunables';
 import { TEAM_BIT } from './types';
 import type { Behaviour, ProjectileState, RuneState, SimBuff, SimHero, SimOptions, SimUnit, SimWorld } from './types';
 import { VisionGrid, recomputeVision } from './vision';
-import { initWaves, tickWaves } from './waves';
+import { assignLane, initWaves, tickWaves } from './waves';
 import type { WaveState } from './waves';
 import type { BuildingState } from './buildings';
 import type { NeutralState } from './neutrals';
@@ -525,6 +525,7 @@ export class World implements SimWorld {
     const hero = def.kind === 'hero' ? makeHeroState(def as HeroDef, false) : undefined;
     const u = this.spawnUnit(def, team, x, y, { ...extra, hero });
     if (u.behaviour === 'guard') u.home = { x, y };
+    if (u.behaviour === 'lane' && extra.lane) assignLane(this, u, extra.lane);
     if (u.def.attackRange > 0 && u.isBuilding) this.attackers.push(u);
     return u;
   }

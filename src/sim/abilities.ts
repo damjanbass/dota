@@ -7,16 +7,12 @@ import type { AbilityDef } from '../core/types';
 import { PathFlag, pathingAt } from '../core/map';
 import { ABILITIES, ITEMS, levelValue } from '../data';
 import { TUNABLES } from './tunables';
-import type { PendingCast, SimHero, SimUnit } from './types';
+import type { PendingCast, SimBuff, SimHero, SimUnit } from './types';
 import type { World } from './world';
 
 type CastResult = { ok: true } | { ok: false; reason: string };
 const fail = (reason: string): CastResult => ({ ok: false, reason });
-
-const valueOr = (def: AbilityDef, key: string, level: number, fallback: number): number => {
-  const arr = def.values[key];
-  return arr && arr.length > 0 ? levelValue(def, key, level) : fallback;
-};
+const simBuff = (b: SimBuff): SimBuff => b;
 
 const isChargeAbility = (def: AbilityDef): boolean => def.kind !== 'item' && !!def.values.charges && !!def.values.chargeRestoreTime;
 
@@ -47,15 +43,15 @@ const BUILTIN: Record<string, (w: World, caster: SimUnit, def: AbilityDef, targe
   item_healing_salve: (w, caster, def, target) => {
     const t = (target.targetId !== undefined ? w.byId.get(target.targetId) : undefined) ?? caster;
     const dur = levelValue(def, 'duration', 1);
-    w.addBuff(t.id, { id: def.id, sourceId: caster.id, expiresAt: w.time + dur, hpPerSecond: levelValue(def, 'totalHeal', 1) / dur, dispelOnDamage: true } as never);
+    w.addBuff(t.id, simBuff({ id: def.id, sourceId: caster.id, expiresAt: w.time + dur, hpPerSecond: levelValue(def, 'totalHeal', 1) / dur, dispelOnDamage: true }));
   },
   item_clarity: (w, caster, def) => {
     const dur = levelValue(def, 'duration', 1);
-    w.addBuff(caster.id, { id: def.id, sourceId: caster.id, expiresAt: w.time + dur, manaPerSecond: levelValue(def, 'totalMana', 1) / dur, dispelOnDamage: true } as never);
+    w.addBuff(caster.id, simBuff({ id: def.id, sourceId: caster.id, expiresAt: w.time + dur, manaPerSecond: levelValue(def, 'totalMana', 1) / dur, dispelOnDamage: true }));
   },
   item_tango: (w, caster, def) => {
     const dur = levelValue(def, 'duration', 1);
-    w.addBuff(caster.id, { id: def.id, sourceId: caster.id, expiresAt: w.time + dur, hpPerSecond: levelValue(def, 'totalHeal', 1) / dur } as never);
+    w.addBuff(caster.id, simBuff({ id: def.id, sourceId: caster.id, expiresAt: w.time + dur, hpPerSecond: levelValue(def, 'totalHeal', 1) / dur }));
   },
 };
 
@@ -155,7 +151,7 @@ const resolveCast = (w: World, u: SimUnit, c: PendingCast): void => {
   if (u.mana < mana) return;
   if (c.itemSlot >= 0 && h && h.items[c.itemSlot] && ITEMS[h.items[c.itemSlot]!]?.active !== c.abilityId) return;
   u.mana -= mana;
-  const cd = valueOr(def, 'cooldown', c.level, 0);
+  const cd = levelValue(def, 'cooldown', c.level);
   if (h && cd > 0) h.cooldownReadyAt[c.abilityId] = w.time + cd;
   if (h && isChargeAbility(def)) {
     h.charges[c.abilityId] = Math.max(0, (h.charges[c.abilityId] ?? 0) - 1);

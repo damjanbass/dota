@@ -45,6 +45,8 @@ export const findTarget = (w: World, u: SimUnit, radius: number): SimUnit | null
   for (const t of acquireScratch) {
     if (t === u || !isValidTarget(w, u, t)) continue;
     if (t.id === u.ignoreId && w.time < u.ignoreUntil) continue;
+    // Lane creeps only fight neutrals that attack them (pulls); scaled acquire ranges would drag them into camps.
+    if (u.behaviour === 'lane' && t.team === 'neutral' && t.targetId !== u.id) continue;
     const dx = t.position.x - u.position.x;
     const dy = t.position.y - u.position.y;
     const d = Math.sqrt(dx * dx + dy * dy) - radiusOf(t);
