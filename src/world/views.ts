@@ -143,10 +143,9 @@ const baseView = (map: LoadedMap, ground: HeightFn, team: 'sentinel' | 'scourge'
   const fountain = find(map, (e) => e.kind === 'fountain' && e.team === team);
   const ancient = find(map, (e) => e.kind === 'ancient' && e.team === team);
   const c = mapCenter(map);
-  const from = fountain ?? { x: c.x + (team === 'sentinel' ? -4000 : 4000), y: c.y + (team === 'sentinel' ? -4000 : 4000) };
-  const to = ancient ?? c;
+  const corner = { x: c.x + (team === 'sentinel' ? -4000 : 4000), y: c.y + (team === 'sentinel' ? -4000 : 4000) };
+  const to = ancient ?? fountain ?? corner;
   // Approach the ancient from the map-centre side (as attackers do), tier-4 towers framing it.
-  void from;
   const d = norm(c.x - to.x, c.y - to.y);
   const c0 = nearestClearSpot(map, to.x + d.x * 1250 - d.y * 150, to.y + d.y * 1250 + d.x * 150);
   return { position: eyeAt(map, ground, c0.x, c0.y), target: { x: to.x, y: to.y, z: ground(to.x, to.y) + 380 } };
