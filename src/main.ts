@@ -6,6 +6,10 @@ const scenes: Record<string, () => Promise<{ run: SceneRunner }>> = {
   preview: () => import('./game/mapPreview'),
   world: () => import('./world/dev'),
   fps: () => import('./player/dev'),
+  sim: () => import('./sim/dev'),
+  kit: () => import('./player/abilities/dev'),
+  ai: () => import('./ai/dev'),
+  ui: () => import('./ui/dev'),
 };
 
 const boot = async (): Promise<void> => {

@@ -178,7 +178,22 @@ export interface GameEvents extends Record<string, unknown> {
   'player:shot': { origin: Vec3; direction: Vec3; result: ShotResult };
   'player:zoom': { level: 0 | 1 | 2 };
   'player:ability': { abilityId: string; target?: Vec3; targetId?: number };
+  'unit:spawned': { unitId: number };
   'unit:damaged': { targetId: number; sourceId: number | null; amount: number; headshot: boolean };
-  'unit:died': { unitId: number; killerId: number | null };
+  /** A basic attack reached its attack point (animation / sound hook). */
+  'unit:attack': { sourceId: number; targetId: number };
+  'unit:died': { unitId: number; killerId: number | null; denied: boolean };
+  'projectile:launched': { projectileId: number; sourceId: number; targetId: number; visual: string; speed: number };
+  'projectile:hit': { projectileId: number; targetId: number };
+  'ability:cast': { unitId: number; abilityId: string; target?: Vec3; targetId?: number };
+  'hero:levelUp': { unitId: number; level: number };
+  'gold:changed': { unitId: number; gold: number; delta: number; reason: string };
+  'item:bought': { unitId: number; itemId: string };
+  'rune:spawned': { runeId: number; kind: string; x: number; y: number };
+  'rune:picked': { runeId: number; kind: string; unitId: number };
+  /** A building died; entityId links back to MapData.entities (colliders, world models). */
+  'building:destroyed': { unitId: number; entityId: number | null };
+  /** Announcer text: First Blood, Double Kill, tower destroyed, Roshan, ... */
+  'announce': { text: string; team: Team | null };
   'match:ended': { winner: Team };
 }

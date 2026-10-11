@@ -7,7 +7,7 @@ This is the WC3 **DotA Allstars v6.83d** map (Frozen Throne, not Dota 2) rebuilt
 
 ## Stack and commands
 Vite 8, TypeScript 7 (strict), three r186, Vitest 4, Playwright. No React. UI is a plain DOM overlay in `#ui`.
-- `npm run dev`: dev server. `?scene=preview|world|fps` picks a dev scene (see `src/main.ts`).
+- `npm run dev`: dev server. `?scene=preview|world|fps|sim|kit|ai|ui` picks a dev scene (see `src/main.ts`).
 - `npm run typecheck`, `npm test` (Vitest), `npm run e2e` (Playwright smoke + your own specs).
 - **Parallel agents must set their own port**: `PORT=<your port> npm run e2e` (bash). Never use 5173 from a worktree.
 - `npm run extract`: `.w3x` → `public/data/` (agent A).
@@ -29,10 +29,11 @@ Vite 8, TypeScript 7 (strict), three r186, Vitest 4, Playwright. No React. UI is
 | Game data | B | `src/data/`, `tests/unit/data*.test.ts` |
 | FPS feel | C | `src/player/` (except `abilities/`), `tests/unit/player*.test.ts`, `tests/e2e/player*.spec.ts` |
 | World art | D | `src/world/`, `public/assets/`, `tests/e2e/world*.spec.ts` |
-| Simulation | E | `src/sim/` |
-| Sniper kit | F | `src/player/abilities/` |
-| Nav + AI | G | `src/nav/`, `src/ai/` |
-| UI + audio | H | `src/ui/`, `src/audio/` |
+| Simulation | E | `src/sim/`, `tests/unit/sim*.test.ts`, `tests/e2e/sim*.spec.ts` |
+| Sniper kit | F | `src/player/abilities/`, `tests/unit/kit*.test.ts`, `tests/e2e/kit*.spec.ts` |
+| Nav + AI | G | `src/nav/`, `src/ai/`, `tests/unit/{nav,ai}*.test.ts`, `tests/e2e/ai*.spec.ts` |
+| UI + audio | H | `src/ui/`, `src/audio/`, `tests/unit/ui*.test.ts`, `tests/e2e/ui*.spec.ts` |
+| Integration | Lead | `src/game/` (game scene, unit renderer, wiring) |
 
 `package.json` and `package-lock.json`: you may `npm install` a dependency only when it clearly beats roughly 20 lines of your own code. Say so in your report. Lead resolves lockfile merges.
 

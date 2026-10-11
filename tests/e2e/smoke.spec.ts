@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 // Every registered dev scene must boot without console errors and mark itself ready.
-for (const scene of ['preview', 'world', 'fps']) {
+for (const scene of ['preview', 'world', 'fps', 'sim', 'kit', 'ai', 'ui']) {
   test(`scene "${scene}" boots`, async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (msg) => {

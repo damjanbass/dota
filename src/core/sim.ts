@@ -79,6 +79,8 @@ export interface UnitState {
   alive: boolean;
   lane?: Lane;
   tier?: Tier;
+  /** MapData.entities id for units placed from the map (buildings, fountains, shops). */
+  entityId?: number;
   buffs: Buff[];
   /** Current order (AI / creeps). Player hero ignores orders. */
   order: Order;
@@ -222,5 +224,30 @@ export interface SimApi {
 
   buyItem(unitId: number, itemId: string): { ok: true } | { ok: false; reason: string };
   buyback(unitId: number): boolean;
+}
+
+export type Difficulty = 'easy' | 'medium' | 'hard';
+
+export interface MatchConfig {
+  seed: number;
+  /** Player hero def id (always 'sniper' for now), Sentinel side. */
+  playerHero: string;
+  /** Allied bot hero def ids (0–4), Sentinel. */
+  allies: string[];
+  /** Enemy bot hero def ids (1–5), Scourge. */
+  enemies: string[];
+  difficulty: Difficulty;
+}
+
+/**
+ * The concrete simulation (src/sim, agent E). Charge-based abilities are generic: an AbilityDef with
+ * values.charges + values.chargeRestoreTime gets HeroState.charges handled by the sim (e.g. Shrapnel).
+ */
+export interface Sim extends SimApi {
+  readonly config: MatchConfig;
+  /** Advance one fixed tick (SIM_DT). */
+  step(dt: number): void;
+  /** Called by bot controllers (G) — AI brains registered per hero unit id. */
+  registerBrain(unitId: number, brain: { update(sim: SimApi, dt: number): void }): void;
 }
 
